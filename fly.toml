@@ -1,0 +1,25 @@
+app = "reconservice"
+primary_region = "sjc"
+
+[build]
+  builder = "heroku/buildpacks:20"
+
+[env]
+  PORT = "8080"
+
+[services]
+  [[services.ports]]
+    handlers = ["http"]
+    port = 8080
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "5s"
+    method = "GET"
+    path = "/"
+    protocol = "http"
+    timeout = 5000

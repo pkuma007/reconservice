@@ -1,11 +1,11 @@
 # Deployment Guide - CSV Reconciliation Service
 
-This guide will help you deploy the CSV Reconciliation Service to Render.com (free tier) using GitHub.
+This guide will help you deploy the CSV Reconciliation Service to Fly.io (truly free tier) using GitHub.
 
 ## Prerequisites
 
 - GitHub account
-- Render.com account (free tier)
+- Fly.io account (free tier)
 - Git installed on your local machine
 - Maven installed on your local machine
 
@@ -17,7 +17,7 @@ This guide will help you deploy the CSV Reconciliation Service to Render.com (fr
 2. Click the "+" button in the top-right corner
 3. Select "New repository"
 4. Repository name: `reconservice` (or your preferred name)
-5. Make it **Public** (required for Render.com free tier)
+5. Make it **Public** (required for Fly.io free tier)
 6. Initialize with: **Add a README file** (optional)
 7. Click "Create repository"
 
@@ -43,57 +43,101 @@ git branch -M main
 git push -u origin main
 ```
 
-### 3. Deploy to Render.com (Manual Configuration)
+### 3. Deploy to Fly.io
 
-Since auto-detection may not work for Java projects, use manual configuration:
+Fly.io has a truly free tier with Java support:
 
-1. Go to [Render.com](https://render.com) and sign in/sign up
-2. Click "New" in the dashboard
-3. Select "Web Service"
-4. Click "Build and deploy from a Git repository"
-5. Connect your GitHub account if not already connected
-6. Select the `reconservice` repository
-7. Configure the following settings:
-   
-   **Basic Settings:**
-   - **Name**: `reconservice`
-   - **Region**: Oregon (or closest to you)
-   - **Branch**: `main`
-   
-   **Runtime:**
-   - **Runtime**: Java
-   - **Build Command**: `mvn clean package -DskipTests`
-   - **Start Command**: `java -jar target/reconservice-1.0-SNAPSHOT.jar`
-   
-   **Advanced:**
-   - **Instance Type**: Free
-   - **RAM**: 512 MB (default for free tier)
-   
-8. Click "Create Web Service"
+1. Install Fly CLI (Mac/Linux):
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   ```
+   Or for Windows, download from https://fly.io/docs/hands-on/install-flyctl/
+
+2. Sign up for Fly.io:
+   ```bash
+   fly auth signup
+   ```
+
+3. Login to Fly.io:
+   ```bash
+   fly auth login
+   ```
+
+4. Initialize Fly.io in your project:
+   ```bash
+   cd /Users/kupravin/IdeaProjects/reconservice
+   fly launch
+   ```
+
+5. When prompted, configure:
+   - App name: `reconservice` (or your preferred name)
+   - Region: Select closest to you (e.g., sjc for San Francisco)
+   - Deploy now: No (we need to configure first)
+
+6. Create a fly.toml file (if not auto-created):
+   ```bash
+   fly launch --no-deploy
+   ```
+
+7. Edit the fly.toml file to configure Java:
+   ```toml
+   app = "reconservice"
+   primary_region = "sjc"
+
+   [build]
+   builder = "heroku/buildpacks:20"
+
+   [env]
+   PORT = "8080"
+
+   [services]
+   [[services.ports]]
+   handlers = ["http"]
+   port = 8080
+
+   [[services.ports]]
+   handlers = ["tls", "http"]
+   port = 443
+
+   [[services.http_checks]]
+   interval = 10000
+   grace_period = "5s"
+   method = "GET"
+   path = "/"
+   protocol = "http"
+   timeout = 5000
+   ```
+
+8. Deploy your application:
+   ```bash
+   fly deploy
+   ```
+
 9. Your app will be deployed automatically (2-5 minutes)
 
 ### 4. Wait for Deployment
 
-- Render will build and deploy your application
+- Fly.io will build and deploy your application
 - This typically takes 2-5 minutes for the first deployment
-- You can monitor the progress in the Render dashboard
-- Once deployed, you'll get a URL like: `https://reconservice.onrender.com`
+- You can monitor the progress with: `fly logs`
+- Once deployed, you'll get a URL like: `https://reconservice.fly.dev`
 
 ### 5. Access Your Application
 
-- Click on the URL provided by Render
+- Click on the URL provided by Fly.io or run: `fly open`
 - Your CSV Reconciliation Service should now be live on the internet!
 
 ## Important Notes
 
 ### Free Tier Limitations
 
-- Render free tier has:
-  - 512 MB RAM
-  - 0.1 CPU
-  - Sleeps after 15 minutes of inactivity
-  - Takes ~30 seconds to wake up from sleep
-  - 750 hours/month usage limit
+- Fly.io free tier includes:
+  - Up to 3 apps
+  - 256 MB RAM per app
+  - Shared CPU
+  - 3 GB volume storage
+  - No sleep time limitation (always running)
+  - Truly free forever
 
 ### File Upload Size
 
@@ -103,52 +147,52 @@ Since auto-detection may not work for Java projects, use manual configuration:
 ### Environment Variables
 
 If you need to add environment variables:
-1. Go to your Render dashboard
-2. Select your service
-3. Click "Environment" tab
-4. Add any required environment variables
+1. Edit the fly.toml file
+2. Add under [env] section:
+   ```toml
+   [env]
+   PORT = "8080"
+   YOUR_VAR = "value"
+   ```
+3. Or use: `fly secrets set YOUR_VAR=value`
 
 ### Monitoring Logs
 
-- View logs in Render dashboard under "Logs" tab
+- View logs with: `fly logs`
 - Monitor for any errors during deployment or runtime
+- View real-time logs with: `fly logs --tail`
 
 ## Alternative Free Hosting Options
 
-### Railway.app
+### Oracle Cloud Always Free
 
-1. Create account at [Railway.app](https://railway.app)
-2. Click "New Project" → "Deploy from GitHub repo"
-3. Select your repository
-4. Railway will auto-detect the Java/Maven setup
-5. Deploy automatically
-
-### Fly.io
-
-1. Install Fly CLI: `curl -L https://fly.io/install.sh | sh`
-2. Sign up and login: `fly auth signup`
-3. Initialize: `fly launch`
-4. Deploy: `fly deploy`
+If you need more resources, Oracle Cloud offers a truly free tier:
+- 2 AMD-based compute instances (always free)
+- 4 ARM-based Ampere A1 cores and 24 GB memory (always free)
+- More complex setup but completely free
+- Visit: https://www.oracle.com/cloud/free/
 
 ## Troubleshooting
 
 ### Build Fails
 
-- Check the build logs in Render dashboard
+- Check the build logs with: `fly logs`
 - Ensure Maven dependencies are correct
 - Verify Java version compatibility (requires Java 11+)
+- Check fly.toml configuration
 
 ### Application Won't Start
 
-- Check the logs in Render dashboard
-- Ensure the start command is correct
+- Check the logs with: `fly logs`
+- Ensure the start command is correct in fly.toml
 - Verify port configuration (default: 8080)
+- Check if the app is healthy: `fly status`
 
-### 502 Bad Gateway
+### Connection Issues
 
-- Application might be starting up
-- Wait 1-2 minutes and refresh
-- Check if application is sleeping and needs to wake up
+- Check if the app is running: `fly status`
+- Verify the region is accessible
+- Check firewall settings
 
 ## Updates and Redeployment
 
@@ -160,11 +204,15 @@ git commit -m "Your commit message"
 git push
 ```
 
-Render will automatically detect the push and redeploy your application.
+Then redeploy to Fly.io:
+
+```bash
+fly deploy
+```
 
 ## Security Considerations
 
-- Keep your repository public for Render free tier
+- Keep your repository public for Fly.io free tier
 - Don't commit sensitive data (API keys, secrets)
-- Use environment variables for sensitive configuration
+- Use fly secrets for sensitive configuration: `fly secrets set KEY=value`
 - Regularly update dependencies for security patches
