@@ -1,13 +1,14 @@
 # Deployment Guide - CSV Reconciliation Service
 
-This guide will help you deploy the CSV Reconciliation Service to Fly.io (truly free tier) using GitHub.
+This guide will help you deploy the CSV Reconciliation Service to Oracle Cloud Always Free (truly free, no payment method required).
 
 ## Prerequisites
 
 - GitHub account
-- Fly.io account (free tier)
+- Oracle Cloud account (Always Free tier - no payment method required)
 - Git installed on your local machine
 - Maven installed on your local machine
+- SSH client installed
 
 ## Deployment Steps
 
@@ -17,7 +18,7 @@ This guide will help you deploy the CSV Reconciliation Service to Fly.io (truly 
 2. Click the "+" button in the top-right corner
 3. Select "New repository"
 4. Repository name: `reconservice` (or your preferred name)
-5. Make it **Public** (required for Fly.io free tier)
+5. Make it **Public** (optional but recommended)
 6. Initialize with: **Add a README file** (optional)
 7. Click "Create repository"
 
@@ -43,101 +44,113 @@ git branch -M main
 git push -u origin main
 ```
 
-### 3. Deploy to Fly.io
+### 3. Deploy to Oracle Cloud Always Free
 
-Fly.io has a truly free tier with Java support:
+Oracle Cloud offers a truly free tier with no payment method required:
 
-1. Install Fly CLI (Mac/Linux):
+1. **Create Oracle Cloud Account:**
+   - Go to https://www.oracle.com/cloud/free/
+   - Click "Try Free"
+   - Sign up with your email
+   - No payment method required for Always Free tier
+   - Verify your email address
+
+2. **Create a Compute Instance:**
+   - Go to Oracle Cloud Console
+   - Navigate to "Compute" → "Instances"
+   - Click "Create Instance"
+   - Configure:
+     - **Name**: `reconservice`
+     - **Compartment**: Select your compartment
+     - **Availability Domain**: Any
+     - **Shape**: Always Free (VM.Standard.E2.1.Micro)
+     - **Operating System**: Oracle Linux or Ubuntu
+     - **SSH Keys**: Add your SSH public key
+   - Click "Create"
+
+3. **Connect to Your Instance:**
    ```bash
-   curl -L https://fly.io/install.sh | sh
+   ssh -i /path/to/your/private-key opc@<your-instance-public-ip>
    ```
-   Or for Windows, download from https://fly.io/docs/hands-on/install-flyctl/
 
-2. Sign up for Fly.io:
+4. **Install Java and Maven on the Instance:**
    ```bash
-   fly auth signup
+   sudo yum update -y
+   sudo yum install -y java-11-openjdk-devel
+   sudo yum install -y maven
+   java -version
+   mvn -version
    ```
 
-3. Login to Fly.io:
+5. **Clone Your Repository:**
    ```bash
-   fly auth login
+   git clone https://github.com/YOUR_USERNAME/reconservice.git
+   cd reconservice
    ```
 
-4. Initialize Fly.io in your project:
+6. **Build the Application:**
    ```bash
-   cd /Users/kupravin/IdeaProjects/reconservice
-   fly launch
+   mvn clean package -DskipTests
    ```
 
-5. When prompted, configure:
-   - App name: `reconservice` (or your preferred name)
-   - Region: Select closest to you (e.g., sjc for San Francisco)
-   - Deploy now: No (we need to configure first)
-
-6. Create a fly.toml file (if not auto-created):
+7. **Run the Application:**
    ```bash
-   fly launch --no-deploy
+   java -jar target/reconservice-1.0-SNAPSHOT.jar
    ```
 
-7. Edit the fly.toml file to configure Java:
-   ```toml
-   app = "reconservice"
-   primary_region = "sjc"
+8. **Configure Firewall:**
+   - Go to Oracle Cloud Console
+   - Navigate to "Networking" → "Virtual Cloud Networks"
+   - Add an ingress rule to allow traffic on port 8080 from 0.0.0.0/0
 
-   [build]
-   builder = "heroku/buildpacks:20"
-
-   [env]
-   PORT = "8080"
-
-   [services]
-   [[services.ports]]
-   handlers = ["http"]
-   port = 8080
-
-   [[services.ports]]
-   handlers = ["tls", "http"]
-   port = 443
-
-   [[services.http_checks]]
-   interval = 10000
-   grace_period = "5s"
-   method = "GET"
-   path = "/"
-   protocol = "http"
-   timeout = 5000
-   ```
-
-8. Deploy your application:
+9. **Set Up as a Service (Optional):**
    ```bash
-   fly deploy
+   sudo vi /etc/systemd/system/reconservice.service
    ```
+   Add:
+   ```ini
+   [Unit]
+   Description=Reconciliation Service
+   After=network.target
 
-9. Your app will be deployed automatically (2-5 minutes)
+   [Service]
+   Type=simple
+   User=opc
+   WorkingDirectory=/home/opc/reconservice
+   ExecStart=/usr/bin/java -jar /home/opc/reconservice/target/reconservice-1.0-SNAPSHOT.jar
+   Restart=on-failure
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+   Then:
+   ```bash
+   sudo systemctl enable reconservice
+   sudo systemctl start reconservice
+   ```
 
 ### 4. Wait for Deployment
 
-- Fly.io will build and deploy your application
-- This typically takes 2-5 minutes for the first deployment
-- You can monitor the progress with: `fly logs`
-- Once deployed, you'll get a URL like: `https://reconservice.fly.dev`
+- The application will start immediately after building
+- This typically takes 5-10 minutes for the first deployment
+- You can monitor the application with: `sudo systemctl status reconservice`
+- Once deployed, access via: `http://<your-instance-public-ip>:8080`
 
 ### 5. Access Your Application
 
-- Click on the URL provided by Fly.io or run: `fly open`
+- Open your browser and navigate to: `http://<your-instance-public-ip>:8080`
 - Your CSV Reconciliation Service should now be live on the internet!
 
 ## Important Notes
 
 ### Free Tier Limitations
 
-- Fly.io free tier includes:
-  - Up to 3 apps
-  - 256 MB RAM per app
-  - Shared CPU
-  - 3 GB volume storage
-  - No sleep time limitation (always running)
-  - Truly free forever
+- Oracle Cloud Always Free includes:
+  - 2 AMD-based compute instances (VM.Standard.E2.1.Micro)
+  - 4 ARM-based Ampere A1 cores and 24 GB memory
+  - 200 GB block volume storage
+  - 10 TB/month outbound data transfer
+  - Truly free forever with no payment method required
 
 ### File Upload Size
 
@@ -147,52 +160,47 @@ Fly.io has a truly free tier with Java support:
 ### Environment Variables
 
 If you need to add environment variables:
-1. Edit the fly.toml file
-2. Add under [env] section:
-   ```toml
-   [env]
-   PORT = "8080"
-   YOUR_VAR = "value"
+1. SSH into your instance
+2. Edit the service file: `sudo vi /etc/systemd/system/reconservice.service`
+3. Add under [Service] section:
+   ```ini
+   Environment="PORT=8080"
+   Environment="YOUR_VAR=value"
    ```
-3. Or use: `fly secrets set YOUR_VAR=value`
+4. Reload and restart:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart reconservice
+   ```
 
 ### Monitoring Logs
 
-- View logs with: `fly logs`
+- View logs with: `sudo journalctl -u reconservice -f`
 - Monitor for any errors during deployment or runtime
-- View real-time logs with: `fly logs --tail`
-
-## Alternative Free Hosting Options
-
-### Oracle Cloud Always Free
-
-If you need more resources, Oracle Cloud offers a truly free tier:
-- 2 AMD-based compute instances (always free)
-- 4 ARM-based Ampere A1 cores and 24 GB memory (always free)
-- More complex setup but completely free
-- Visit: https://www.oracle.com/cloud/free/
+- Check application status: `sudo systemctl status reconservice`
 
 ## Troubleshooting
 
 ### Build Fails
 
-- Check the build logs with: `fly logs`
+- Check the build logs in the terminal
 - Ensure Maven dependencies are correct
 - Verify Java version compatibility (requires Java 11+)
-- Check fly.toml configuration
+- Check internet connectivity on the instance
 
 ### Application Won't Start
 
-- Check the logs with: `fly logs`
-- Ensure the start command is correct in fly.toml
+- Check the logs: `sudo journalctl -u reconservice -f`
+- Ensure the JAR file exists: `ls -la target/reconservice-1.0-SNAPSHOT.jar`
 - Verify port configuration (default: 8080)
-- Check if the app is healthy: `fly status`
+- Check service status: `sudo systemctl status reconservice`
 
 ### Connection Issues
 
-- Check if the app is running: `fly status`
-- Verify the region is accessible
-- Check firewall settings
+- Check if the instance is running in Oracle Cloud Console
+- Verify firewall rules allow port 8080
+- Check security list ingress rules
+- Ensure the instance has a public IP address
 
 ## Updates and Redeployment
 
@@ -204,15 +212,21 @@ git commit -m "Your commit message"
 git push
 ```
 
-Then redeploy to Fly.io:
+Then redeploy on the Oracle Cloud instance:
 
 ```bash
-fly deploy
+ssh -i /path/to/your/private-key opc@<your-instance-public-ip>
+cd reconservice
+git pull
+mvn clean package -DskipTests
+sudo systemctl restart reconservice
 ```
 
 ## Security Considerations
 
-- Keep your repository public for Fly.io free tier
-- Don't commit sensitive data (API keys, secrets)
-- Use fly secrets for sensitive configuration: `fly secrets set KEY=value`
-- Regularly update dependencies for security patches
+- Use SSH keys for instance access (not passwords)
+- Configure firewall rules to restrict access
+- Don't commit sensitive data (API keys, secrets) to git
+- Use environment variables for sensitive configuration
+- Regularly update the OS and dependencies for security patches
+- Keep your SSH private key secure
