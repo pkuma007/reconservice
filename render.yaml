@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: reconservice
-    env: java
-    plan: free
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -jar target/reconservice-1.0-SNAPSHOT.jar

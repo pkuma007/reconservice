@@ -1,0 +1,10 @@
+modules = ["java-17"]
+
+[env]
+PORT = "8080"
+
+[run]
+command = "mvn spring-boot:run"
+
+[[ports]]
+localPort = 8080
