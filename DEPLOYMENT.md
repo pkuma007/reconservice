@@ -43,21 +43,9 @@ git branch -M main
 git push -u origin main
 ```
 
-### 3. Deploy to Render.com
+### 3. Deploy to Render.com (Manual Configuration)
 
-#### Option A: Using render.yaml (Recommended)
-
-1. Go to [Render.com](https://render.com) and sign in/sign up
-2. Click "New" in the dashboard
-3. Select "Web Service"
-4. Click "Build and deploy from a Git repository"
-5. Connect your GitHub account if not already connected
-6. Select the `reconservice` repository
-7. Render will automatically detect the `render.yaml` file
-8. Click "Create Web Service"
-9. Your app will be deployed automatically
-
-#### Option B: Manual Configuration
+Since auto-detection may not work for Java projects, use manual configuration:
 
 1. Go to [Render.com](https://render.com) and sign in/sign up
 2. Click "New" in the dashboard
@@ -65,15 +53,24 @@ git push -u origin main
 4. Click "Build and deploy from a Git repository"
 5. Connect your GitHub account if not already connected
 6. Select the `reconservice` repository
-7. Configure:
+7. Configure the following settings:
+   
+   **Basic Settings:**
    - **Name**: `reconservice`
    - **Region**: Oregon (or closest to you)
    - **Branch**: `main`
+   
+   **Runtime:**
    - **Runtime**: Java
    - **Build Command**: `mvn clean package -DskipTests`
    - **Start Command**: `java -jar target/reconservice-1.0-SNAPSHOT.jar`
+   
+   **Advanced:**
+   - **Instance Type**: Free
+   - **RAM**: 512 MB (default for free tier)
+   
 8. Click "Create Web Service"
-9. Your app will be deployed automatically
+9. Your app will be deployed automatically (2-5 minutes)
 
 ### 4. Wait for Deployment
 
