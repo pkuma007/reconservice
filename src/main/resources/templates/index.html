@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Reconciliation Service</title>
+    <link rel="stylesheet" href="/css/style.css?v=3">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Data Reconciliation Service</h1>
+            <p class="subtitle">Compare and reconcile delimited files (CSV, DAT, PSV, etc.)</p>
+        </header>
+
+        <div class="main-tabs">
+            <button class="main-tab active" data-tab="upload">📁 Upload Files</button>
+            <button class="main-tab" data-tab="results">📊 Results</button>
+        </div>
+
+        <div class="tab-content active" id="upload-tab">
+            <div class="card upload-section">
+                <h2>📁 Upload Files</h2>
+                <form id="reconciliationForm">
+                <div class="upload-grid">
+                    <div class="upload-column">
+                        <div class="form-group">
+                            <label for="sourceFile">Source File</label>
+                            <div class="file-drop-zone">
+                                <input type="file" id="sourceFile" name="sourceFile" required>
+                                <div class="file-name" id="sourceFileName">Drag & drop or click to upload</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="upload-column">
+                        <div class="form-group">
+                            <label for="targetFile">Target File</label>
+                            <div class="file-drop-zone">
+                                <input type="file" id="targetFile" name="targetFile" required>
+                                <div class="file-name" id="targetFileName">Drag & drop or click to upload</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="delimiter">Delimiter</label>
+                        <select id="delimiter" name="delimiter">
+                            <option value=",">Comma (,)</option>
+                            <option value="|">Pipe (|)</option>
+                            <option value="~">Tilde (~)</option>
+                            <option value=";">Semicolon (;)</option>
+                            <option value="\t">Tab (\t)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hasHeader">Has Header</label>
+                        <select id="hasHeader" name="hasHeader">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="keyColumn">Key Column (optional)</label>
+                    <input type="text" id="keyColumn" name="keyColumn" placeholder="Leave empty for auto-detection">
+                    <small>If empty, the system will automatically detect the best key column</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="advancedKeyConfig" name="advancedKeyConfig">
+                        Enable Advanced Key Configuration
+                    </label>
+                </div>
+
+                <div id="advancedKeyConfigSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="sourceKeyColumns">Source Key Columns (comma-separated)</label>
+                        <input type="text" id="sourceKeyColumns" name="sourceKeyColumns" placeholder="e.g., customer_id, city">
+                        <small>Multiple columns will be concatenated</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetKeyColumns">Target Key Columns (comma-separated)</label>
+                        <input type="text" id="targetKeyColumns" name="targetKeyColumns" placeholder="e.g., custId">
+                        <small>Multiple columns will be concatenated</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="concatenationSeparator">Concatenation Separator</label>
+                        <select id="concatenationSeparator" name="concatenationSeparator">
+                            <option value="_">Underscore (_)</option>
+                            <option value="-">Hyphen (-)</option>
+                            <option value="">No separator</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="columnMapping">Column Mapping (optional)</label>
+                        <input type="text" id="columnMapping" name="columnMapping" placeholder="e.g., customer_id=custId, city=location">
+                        <small>Format: sourceCol=targetCol, sourceCol2=targetCol2</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="ignoreCase" name="ignoreCase">
+                            Ignore Case
+                        </label>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="trimWhitespace" name="trimWhitespace" checked>
+                            Trim Whitespace
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="btn-text">Reconcile Files</span>
+                    <span class="btn-loader" style="display: none;">Processing...</span>
+                </button>
+            </form>
+            </div>
+        </div>
+
+        <div class="tab-content" id="results-tab">
+            <div class="card results-section" id="resultsSection" style="display: none;">
+                <h2>Reconciliation Results</h2>
+                <div id="resultsContent"></div>
+            </div>
+
+            <div class="card report-section" id="reportSection" style="display: none;">
+                <h2>Detailed Report</h2>
+                <div id="reportContent"></div>
+                <button class="btn btn-secondary" id="downloadReportBtn">Download Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js?v=33"></script>
+</body>
+</html>
